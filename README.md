@@ -4,6 +4,22 @@ Nomadctl is a utility to help manage Nomad. It can render templates using
 Consul-Template, manage deployments (including automatic promotion of canary
 deployments), restart jobs and task groups, and a few other utility functions.
 
+## Installation
+There's a few ways to download and install nomadctl:
+
+#### Using Homebrew
+```
+brew install bdclark/tap/nomadctl
+```
+
+#### Using Go Get
+```
+go get github.com/bdclark/nomadctl
+```
+
+#### Manually
+Download your desired flavor from the [GitHub releases][1] page and install manually.
+
 ## Commands
 TODO: Add command documentation. In the meantime, see `nomadctl --help`.
 
@@ -71,3 +87,5 @@ Each item takes precedence over the item below it:
 * Environment variable
 * Config file
 * Application default
+
+[1]:https://github.com/bdclark/nomadctl/releases
