@@ -1,0 +1,34 @@
+project_name: nomadctl
+release:
+  github:
+    owner: bdclark
+    name: nomadctl
+  name_template: '{{ .Tag }}'
+builds:
+- goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+  - "386"
+  goarm:
+  - "6"
+  main: .
+  ldflags: -s -w -X github.com/bdclark/nomadctl/version.Version={{ .Version }} -X github.com/bdclark/nomadctl/version.GitCommit={{ .Commit }}
+  binary: nomadctl
+brew:
+  github:
+    owner: bdclark
+    name: homebrew-tap
+  commit_author:
+    name: bdclark
+    email: brian@clark.zone
+  folder: Formula
+  homepage: https://github.com/bdclark/nomadctl
+  install: bin.install "nomadctl"
+archive:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+  format: binary
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
+dist: dist
