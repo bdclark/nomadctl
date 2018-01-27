@@ -32,6 +32,10 @@ func (d *Deployment) Plan(verbose, diff, noColor bool) (bool, error) {
 		d.client.SetNamespace(*n)
 	}
 
+	if !d.isRedeploy {
+		d.updateRedeployMeta()
+	}
+
 	resp, _, err := d.client.Jobs().Plan(d.job, true, nil)
 	if err != nil {
 		return false, errors.Wrap(err, "plan failed")

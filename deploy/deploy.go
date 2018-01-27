@@ -14,6 +14,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	// RedeployMetaKey ...
+	RedeployMetaKey = "nomadctl_redeploy"
+)
+
 // Deployment is the internal representation of a Nomadctl deployment
 type Deployment struct {
 	client           *api.Client // the Nomad API client
@@ -26,6 +31,7 @@ type Deployment struct {
 	idLen            int         // how long to print ids
 	needsPromotion   bool        // whether the running deployment requires a promotion to complete
 	promoted         bool        // whether a job needing promotion has been promoted
+	isRedeploy       bool        // whether this deployment is actually a re-deployment
 }
 
 // NewDeploymentInput represents the input for a new deployment
@@ -39,11 +45,17 @@ type NewDeploymentInput struct {
 	Verbose          bool     // whether long UUIDs should be logged
 }
 
+// RedeploymentInput represents the input for a redeployment
+type RedeploymentInput struct {
+	JobName        string
+	TaskGroupNames []string
+	AutoPromote    bool
+	Verbose        bool
+}
+
 // NewDeployment generates a new deployment
 func NewDeployment(i *NewDeploymentInput) (d *Deployment, err error) {
-	var client *api.Client
-
-	client, err = api.NewClient(api.DefaultConfig())
+	client, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
 		return
 	}
@@ -55,8 +67,9 @@ func NewDeployment(i *NewDeploymentInput) (d *Deployment, err error) {
 		jobModifyIndex:   i.JobModifyIndex,
 		useTemplateCount: i.UseTemplateCount,
 		autoPromote:      i.AutoPromote,
-		idLen:            8,
 	}
+
+	d.setIDLength(i.Verbose)
 
 	if i.Jobspec != nil && len(*i.Jobspec) > 0 {
 		if i.Job != nil {
@@ -71,11 +84,56 @@ func NewDeployment(i *NewDeploymentInput) (d *Deployment, err error) {
 		}
 	}
 
-	if i.Verbose {
-		d.idLen = 36
+	return
+}
+
+// ReDeploy redeploys an existing remote job
+func ReDeploy(i *RedeploymentInput) (bool, error) {
+	client, err := api.NewClient(api.DefaultConfig())
+	if err != nil {
+		return false, err
 	}
 
-	return
+	// ensure job exists remotely
+	job, _, err := client.Jobs().Info(i.JobName, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			return false, fmt.Errorf("job \"%s\" not found on server", i.JobName)
+		}
+		return false, err
+	}
+
+	// use current time for value in meta key
+	t := time.Now().Format(time.RFC3339)
+
+	for _, tg := range job.TaskGroups {
+		if tg.Meta == nil {
+			tg.Meta = make(map[string]string)
+		}
+		// if no group(s) specified, update meta key in each
+		if len(i.TaskGroupNames) == 0 {
+			tg.Meta[RedeployMetaKey] = t
+		} else {
+			// group(s) specified, only update if matching
+			for _, g := range i.TaskGroupNames {
+				if g == *tg.Name {
+					tg.Meta[RedeployMetaKey] = t
+				}
+			}
+		}
+	}
+
+	// create a deployment
+	var d Deployment
+	d.isRedeploy = true
+	d.client = client
+	d.job = job
+	d.setIDLength(i.Verbose)
+	d.autoPromote = i.AutoPromote
+
+	// deploy it
+	d.Plan(false, true, false)
+	return d.Deploy()
 }
 
 // Deploy performs a deployment
@@ -91,6 +149,13 @@ func (d *Deployment) Deploy() (success bool, err error) {
 	// optionally update task group counts to reflect what's currently deployed
 	if !d.useTemplateCount {
 		if err = d.updateGroupCounts(); err != nil {
+			return false, err
+		}
+	}
+
+	// update the redeployment meta to match remote job
+	if !d.isRedeploy {
+		if err = d.updateRedeployMeta(); err != nil {
 			return false, err
 		}
 	}
@@ -156,21 +221,20 @@ func (d *Deployment) Deploy() (success bool, err error) {
 }
 
 // updateGroupCounts updates the job's task group counts with those
-// found in a running job with the same name
+// found in a remote job with the same name
 func (d *Deployment) updateGroupCounts() error {
-	runningJob, _, err := d.client.Jobs().Info(*d.job.Name, nil)
+	remoteJob, _, err := d.client.Jobs().Info(*d.job.Name, nil)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "404") {
-			// this is not an error, the job just doesn't exist
-			return nil
+			return nil // job doesn't exist
 		}
 		return err
 	}
 
-	logging.Debug("attempting to update group counts for job \"%s\" from running job", *d.job.Name)
+	logging.Debug("attempting to update group counts for job \"%s\" from remote job", *d.job.Name)
 
-	for _, rtg := range runningJob.TaskGroups {
+	for _, rtg := range remoteJob.TaskGroups {
 		for _, tg := range d.job.TaskGroups {
 			if rtg.Name == tg.Name {
 				if tg.Count != rtg.Count {
@@ -182,6 +246,42 @@ func (d *Deployment) updateGroupCounts() error {
 			}
 		}
 	}
+	return nil
+}
+
+// updateRedeployMeta updates the job's task group redeployment related
+// meta with the meta found in a remote job with the same name
+func (d *Deployment) updateRedeployMeta() error {
+	remoteJob, _, err := d.client.Jobs().Info(*d.job.Name, nil)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			return nil // job doesn't exist
+		}
+		return err
+	}
+
+	logging.Debug("attempting to update redeploy meta for job \"%s\" from remote job", *d.job.Name)
+
+	for _, rtg := range remoteJob.TaskGroups {
+		for _, tg := range d.job.TaskGroups {
+			logging.Warning("remote group %s meta: %+v", *rtg.Name, rtg.Meta)
+			logging.Warning("local group %s meta: %+v", *tg.Name, tg.Meta)
+			if *rtg.Name == *tg.Name {
+
+				if val, ok := rtg.Meta[RedeployMetaKey]; ok {
+					logging.Info("updating `%s` meta key to match remote job \"%s\", group \"%s\"",
+						RedeployMetaKey, *d.job.Name, *tg.Name)
+					if tg.Meta == nil {
+						tg.Meta = make(map[string]string)
+					}
+					tg.Meta[RedeployMetaKey] = val
+				}
+				break
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -560,4 +660,13 @@ func limit(s string, length int) string {
 	}
 
 	return s[:length]
+}
+
+// setIDLength sets the length of UUIDs in log messages
+func (d *Deployment) setIDLength(verbose bool) {
+	if verbose {
+		d.idLen = 36
+	} else {
+		d.idLen = 8
+	}
 }
