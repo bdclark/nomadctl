@@ -11,7 +11,7 @@ import (
 // gcCmd represents the gc command
 var gcCmd = &cobra.Command{
 	Use:   "gc",
-	Short: "Force Nomad cluster garbage collection",
+	Short: "Force cluster garbage collection",
 	Long:  `The gc command will force a Nomad cluster garbage collection.`,
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {

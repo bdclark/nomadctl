@@ -10,7 +10,7 @@ import (
 // reEvalCmd represents the re-eval command
 var reEvalCmd = &cobra.Command{
 	Use:   "re-eval [JOB]",
-	Short: "Re-evaluate a Nomad job or all jobs",
+	Short: "Re-evaluate a job or all jobs",
 	Long:  `Forces a re-evaluation of a specific Nomad job or all jobs in the cluster.`,
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

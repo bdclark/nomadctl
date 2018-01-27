@@ -14,11 +14,41 @@ import (
 
 // deployCmd represents the deploy command
 var deployCmd = &cobra.Command{
-	Use:   "deploy TEMPLATE",
-	Short: "Deploy a Nomad job from a template",
-	Long:  `Deploy a Nomad job`,
-	Args:  cobra.ExactArgs(1),
+	Use:   "deploy TEMPLATE_SOURCE",
+	Short: "Deploy a job defined from a template",
+	Long: `Renders a Nomad job template using Consul-Template then deploys
+the resulting job to Nomad.
+
+The specified job key is a prefix that is expected to have one or more
+sub-keys. If a "prefix" is specified via command-line flag, config file,
+or environment variable, the the actual job key becomes "<prefix>/<jobkey>".
+
+See "nomadctl help render kv" for details regarding the template source,
+rendering options, and supported Consul keys. In addition to the template-
+related Consul keys, the following deployment-related Consul keys are
+supported:
+
+"<jobkey>/deploy/auto_promote" - same as "--auto-promote" command-line flag
+"<jobkey>/deploy/force_count" - same as "--force-count" command-line flag
+
+Once rendered, the job is registered with Nomad and monitored until
+the deployment is complete. If the deployment fails, details of
+the failed allocation(s) are logged.
+
+If the job is configured with canary(s), the deployment can be
+automatically promoted once the canary(s) are healthy using the
+"auto-promote" command-line flag or related config file, environment
+variable, or Consul KV setting.
+
+By default, if a remote job is running with the same name, nomadctl
+will update the count within each task group to match that of the
+remote job so the number of resulting allocations will not change.
+Use the "force-count" command-line flag or related config file,
+environment variable, or Consul KV setting to force the deployment
+to use the count(s) defined in the job template.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		initConfig(cmd)
 		viper.Set("template.source", args[0])
 		doDeploy(cmd, "")
 	},
@@ -26,10 +56,32 @@ var deployCmd = &cobra.Command{
 
 var deployKVCmd = &cobra.Command{
 	Use:   "kv JOBKEY",
-	Short: "Deploy a Nomad job defined in Consul",
-	Long:  `Deploy a Nomad job defined in Consul`,
-	Args:  cobra.ExactArgs(1),
+	Short: "Deploy a job defined in Consul",
+	Long: `Renders a Nomad job template using Consul-Template then deploys
+the resulting job to Nomad using configuration information
+stored in Consul.
+
+See "nomadctl help render" for details regarding the template source
+and template rendering options.
+
+Once rendered, the job is registered with Nomad and monitored until
+the deployment is complete. If the deployment fails, details of
+the failed allocation(s) are logged.
+
+If the job is configured with canary(s), the deployment can be
+automatically promoted once the canary(s) are healthy using the
+"auto-promote" command-line flag or related config file / environment
+variable setting.
+
+By default, if a remote job is running with the same name, nomadctl
+will update the count within each task group to match that of the
+remote job so the number of resulting allocations will not change.
+Use the "force-count" command-line flag or related config file /
+environment variable setting to force the deployment to use
+the count(s) defined in the job template.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		initConfig(cmd)
 		doDeploy(cmd, args[0])
 	},
 }
@@ -38,11 +90,11 @@ func init() {
 	rootCmd.AddCommand(deployCmd)
 	deployCmd.AddCommand(deployKVCmd)
 
-	addTemplateFlags(deployCmd)
+	addConfigFlags(deployCmd)
 	addDeployFlags(deployCmd)
 
+	addConfigFlags(deployKVCmd)
 	addConsulFlags(deployKVCmd)
-	addTemplateFlags(deployKVCmd)
 	addDeployFlags(deployKVCmd)
 }
 

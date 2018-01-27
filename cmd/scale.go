@@ -12,7 +12,7 @@ import (
 // scaleCmd represents the scale command
 var scaleCmd = &cobra.Command{
 	Use:   "scale",
-	Short: "Scale a Nomad job or task group",
+	Short: "Scale a job or task group",
 	Long: `Scales the number of instances of a Nomad task group up, down,
 or to a specific count.`,
 }
@@ -47,7 +47,7 @@ var scaleGetCmd = &cobra.Command{
 
 var scaleUpCmd = &cobra.Command{
 	Use:   "up JOB GROUP COUNT",
-	Short: "Scale a Nomad task group up by the given count",
+	Short: "Scale a task group up by the given count",
 	Args:  cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		jobName := args[0]
@@ -62,7 +62,7 @@ var scaleUpCmd = &cobra.Command{
 
 var scaleDownCmd = &cobra.Command{
 	Use:   "down JOB GROUP COUNT",
-	Short: "Scale a Nomad task group down by the given count",
+	Short: "Scale a task group down by the given count",
 	Run: func(cmd *cobra.Command, args []string) {
 		jobName := args[0]
 		tgName := args[1]
@@ -76,7 +76,7 @@ var scaleDownCmd = &cobra.Command{
 
 var scaleSetCmd = &cobra.Command{
 	Use:   "set JOB GROUP COUNT",
-	Short: "Scale a Nomad task group to a given count",
+	Short: "Scale a task group to a given count",
 	Args:  cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		jobName := args[0]

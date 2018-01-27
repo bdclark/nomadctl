@@ -265,12 +265,10 @@ func (d *Deployment) updateRedeployMeta() error {
 
 	for _, rtg := range remoteJob.TaskGroups {
 		for _, tg := range d.job.TaskGroups {
-			logging.Warning("remote group %s meta: %+v", *rtg.Name, rtg.Meta)
-			logging.Warning("local group %s meta: %+v", *tg.Name, tg.Meta)
 			if *rtg.Name == *tg.Name {
 
 				if val, ok := rtg.Meta[RedeployMetaKey]; ok {
-					logging.Info("updating `%s` meta key to match remote job \"%s\", group \"%s\"",
+					logging.Debug("updating `%s` meta key to match remote job \"%s\", group \"%s\"",
 						RedeployMetaKey, *d.job.Name, *tg.Name)
 					if tg.Meta == nil {
 						tg.Meta = make(map[string]string)

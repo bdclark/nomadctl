@@ -3,20 +3,29 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/bdclark/nomadctl/logging"
 	"github.com/bdclark/nomadctl/version"
-	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // rootCmd is the main entrypoint into the CLI
 var rootCmd = &cobra.Command{
-	Use:     "nomadctl",
-	Short:   "Manage Nomad",
+	Use:   "nomadctl",
+	Short: "Nomadctl is a utility to help manage Nomad.",
+	Long: `Nomadctl is a utility to help manage Nomad.
+
+Nomad client settings must be configured via the standard Nomad
+environment variables:
+
+NOMAD_ADDR: The address of the Nomad server, default: http://127.0.0.1:4646.
+NOMAD_REGION: The region of the Nomad server to forward commands to.
+NOMAD_CACERT: Path to CA cert file to verify Nomad server SSL cert.
+NOMAD_CAPATH: Path to directory of CA cert files to verify server SSL cert.
+NOMAD_CLIENT_CERT: Path to client cert for TLS authentication to Nomad.
+NOMAD_CLIENT_KEY: Path to an private key matching the client cert.
+NOMAD_SKIP_VERIFY: Do not verify TLS certificate (not recommended).
+NOMAD_TOKEN: The ACL token to use to authenticate API requests.`,
 	Version: version.Get(true),
 }
 
@@ -47,47 +56,4 @@ func usageError(cmd *cobra.Command, message string, codeOptional ...int) {
 	}
 
 	os.Exit(code)
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	rootCmd.PersistentFlags().String("log-level", "INFO", "logging level")
-	rootCmd.PersistentFlags().String("config", "", "config file to use (default is $HOME/.nomadctl.yaml)")
-}
-
-func initConfig() {
-	// setup logging level
-	if level, _ := rootCmd.Flags().GetString("log-level"); level != "" {
-		logging.SetLevel(level)
-	}
-
-	// set configuration defaults
-	setViperDefaults()
-
-	// bind viper to environment variables
-	viper.SetEnvPrefix("nomadctl")
-	viper.AutomaticEnv()
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	// read in config file
-	cfgFile, _ := rootCmd.Flags().GetString("config")
-
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".nomadctl")
-	}
-
-	if err := viper.ReadInConfig(); err == nil {
-		logging.Debug("using config file \"%s\"", viper.ConfigFileUsed())
-	} else {
-		logging.Debug("failed to read config file \"%s\": %v", viper.ConfigFileUsed(), err)
-	}
 }

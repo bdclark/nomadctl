@@ -10,10 +10,19 @@ import (
 
 var planCmd = &cobra.Command{
 	Use:   "plan TEMPLATE",
-	Short: "Plan a Nomad job from a template",
-	Long:  `Plan a Nomad job`,
-	Args:  cobra.ExactArgs(1),
+	Short: "Plan a job from a template",
+	Long: `Renders a Nomad job template using Consul-Template then envokes
+the scheduler in a dry-run mode to determine what would happen if the job
+is submitted.
+
+See "nomadctl help render" for details regarding the template source,
+rendering options, and supported Consul keys.
+
+Once rendered, the plan is executed and shown as standard output.
+Display options can be set with various command-line flags.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		initConfig(cmd)
 		viper.Set("template.source", args[0])
 		doPlan(cmd, "")
 	},
@@ -21,10 +30,23 @@ var planCmd = &cobra.Command{
 
 var planKVCmd = &cobra.Command{
 	Use:   "kv JOBKEY",
-	Short: "Plan a Nomad job defined in Consul",
-	Long:  `Plan a Nomad job defined in Consul`,
-	Args:  cobra.ExactArgs(1),
+	Short: "Plan a job defined in Consul",
+	Long: `Renders a Nomad job template using Consul-Template then envokes
+the scheduler in a dry-run mode to determine what would happen if the job
+is submitted.
+
+The specified job key is a prefix that is expected to have one or more
+sub-keys. If a "prefix" is specified via command-line flag, config file,
+or environment variable, the the actual job key becomes "<prefix>/<jobkey>".
+
+See "nomadctl help render kv" for details regarding the template source,
+rendering options, and supported Consul keys.
+
+Once rendered, the plan is executed and shown as standard output.
+Display options can be set with various command-line flags`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		initConfig(cmd)
 		doPlan(cmd, args[0])
 	},
 }
@@ -33,8 +55,10 @@ func init() {
 	rootCmd.AddCommand(planCmd)
 	planCmd.AddCommand(planKVCmd)
 
+	addConfigFlags(planCmd)
 	addTemplateFlags(planCmd)
 
+	addConfigFlags(planKVCmd)
 	addConsulFlags(planKVCmd)
 	addTemplateFlags(planKVCmd)
 

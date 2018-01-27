@@ -13,10 +13,22 @@ import (
 // renderCmd represents the render command
 var renderCmd = &cobra.Command{
 	Use:   "render TEMPLATE",
-	Short: "Render a Nomad job template to stdout",
-	Long:  `Renders a Nomad job template using Consul-Template to standard output.`,
-	Args:  cobra.ExactArgs(1),
+	Short: "Render a job template to stdout",
+	Long: `Renders a Nomad job template using Consul-Template to standard output.
+
+The specified template source can either be a path to a template on the
+local filesystem, or a remote artifact. Similar to Nomad's artifact
+retrieval, nomadctl downloads remote artifacts using the go-getter
+library, which permits the downloading of artifacts from a variety of
+locations using a URL as the input source.  Go-getter options can be
+supplied with command-line flags or config file settings.
+
+The template is rendered using Consul-Template using the default
+delimeters of "{{" and "}}", but can be overriden with command-line
+flags or config file settings.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		initConfig(cmd)
 		viper.Set("template.source", args[0])
 		fmt.Fprintf(os.Stdout, "%s", doRender(cmd, ""))
 	},
@@ -24,11 +36,35 @@ var renderCmd = &cobra.Command{
 
 var renderKVCmd = &cobra.Command{
 	Use:   "kv JOBKEY",
-	Short: "Render a Nomad job template from Consul",
+	Short: "Render a job template from Consul",
 	Long: `Renders a Nomad job template using Consul-Template to standard output,
-using configuration information from Consul.`,
+using configuration information stored in Consul.
+
+The specified job key is a prefix that is expected to have one or more
+sub-keys.  If a "prefix" is specified via command-line flag, config file,
+or environment variable, the the actual job key becomes "<prefix>/<jobkey>".
+
+The following Consul keys are supported:
+"<jobkey>/template/source" the source of the template
+"<jobkey>/template/contents" template contents (mutually exlusive of source)
+"<jobkey>/template/left_delimeter" same as --left-delim flag
+"<jobkey>/template/right_delimeter" same as --right-delim flag
+"<jobkey>/template/error_on_missing_key" same as --err-missing-key flag
+"<jobkey>/template/options/*" go-getter options if source is URL
+
+The specified template source can either be a path to a template on the
+local filesystem, or a remote artifact. Similar to Nomad's artifact
+retrieval, nomadctl downloads remote artifacts using the go-getter
+library, which permits the downloading of artifacts from a variety of
+locations using a URL as the input source.  Go-getter options can be
+supplied with consul keys, command-line flags or config file settings.
+
+Settings in Consul override config file and environment variable settings,
+However, if a command-line flag is specfied, it overrides anything
+found in Consul.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		initConfig(cmd)
 		fmt.Fprintf(os.Stdout, "%s", doRender(cmd, args[0]))
 	},
 }
@@ -37,14 +73,16 @@ func init() {
 	rootCmd.AddCommand(renderCmd)
 	renderCmd.AddCommand(renderKVCmd)
 
+	addConfigFlags(renderCmd)
 	addTemplateFlags(renderCmd)
+
+	addConfigFlags(renderKVCmd)
 	addConsulFlags(renderKVCmd)
 	addTemplateFlags(renderKVCmd)
 }
 
 func doRender(cmd *cobra.Command, consulJobKey string) []byte {
-	// bind cli flags to viper
-	bindFlags(cmd)
+	initConfig(cmd)
 
 	// update viper settings from Consul
 	if consulJobKey != "" {

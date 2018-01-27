@@ -11,9 +11,13 @@ import (
 // drainCmd represents the drain command
 var drainCmd = &cobra.Command{
 	Use:   "drain",
-	Short: "Drain a Nomad node and wait until done",
-	Long:  `Drains a Nomad node, waiting until all allocations are no longer running.`,
-	Args:  cobra.ExactArgs(0),
+	Short: "Drain a client node and wait until done",
+	Long: `Drains a Nomad client, blocking until all allocations are no
+longer running.
+
+The targeted node can be specified by using the
+appropriate command-line flag.`,
+	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		var nodeID string

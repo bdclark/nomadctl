@@ -11,7 +11,7 @@ import (
 // restartCmd represents the restart command
 var restartCmd = &cobra.Command{
 	Use:   "restart JOB",
-	Short: "Restart a Nomad job or task group",
+	Short: "Restart a job or task group",
 	Long:  `Restarts a Nomad job or a task group within a job if specified.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

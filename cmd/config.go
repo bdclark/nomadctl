@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 
 	"github.com/bdclark/nomadctl/logging"
@@ -11,10 +13,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// setViperDefaults sets the apps configuration defaults
-func setViperDefaults() {
-	viper.SetDefault("prefix", "")
+func addConfigFlags(cmd *cobra.Command) {
+	cmd.Flags().String("log-level", "INFO", "logging level")
+	cmd.Flags().String("config", "", "config file to use (default is $HOME/.nomadctl.yaml)")
+}
 
+func initConfig(cmd *cobra.Command) {
+	// setup logging level
+	if level, _ := cmd.Flags().GetString("log-level"); level != "" {
+		logging.SetLevel(level)
+	}
+
+	// set configuration defaults
+	viper.SetDefault("prefix", "")
 	viper.SetDefault("template", map[string]interface{}{
 		"left_delimeter":       "{{",
 		"right_delimeter":      "}}",
@@ -23,24 +34,58 @@ func setViperDefaults() {
 		"error_on_missing_key": false,
 		"options":              make(map[string]interface{}),
 	})
-
 	viper.SetDefault("deploy", map[string]interface{}{
 		"auto_promote":      false,
 		"force_count":       false,
 		"plan":              false,
 		"skip_confirmation": false,
 	})
-
 	viper.SetDefault("plan", map[string]interface{}{
 		"no_color": false,
 		"diff":     true,
 		"verbose":  false,
 	})
+
+	// bind viper to command-line flags
+	bindFlag(cmd, "prefix", "prefix")
+	bindFlag(cmd, "template.left_delimeter", "left-delim")
+	bindFlag(cmd, "template.right_delimeter", "right-delim")
+	bindFlag(cmd, "template.error_on_missing_key", "err-missing-key")
+	bindFlag(cmd, "deploy.auto_promote", "auto-promote")
+	bindFlag(cmd, "deploy.force_count", "force-count")
+	bindFlag(cmd, "deploy.plan", "plan")
+	bindFlag(cmd, "deploy.skip_confirmation", "yes")
+
+	// bind viper to environment variables
+	viper.SetEnvPrefix("nomadctl")
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	// read in config file
+	cfgFile, _ := cmd.Flags().GetString("config")
+
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		home, err := homedir.Dir()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		viper.AddConfigPath(home)
+		viper.SetConfigName(".nomadctl")
+	}
+
+	if err := viper.ReadInConfig(); err == nil {
+		logging.Debug("using config file \"%s\"", viper.ConfigFileUsed())
+	} else {
+		logging.Debug("failed to read config file \"%s\": %v", viper.ConfigFileUsed(), err)
+	}
 }
 
 // addConsulFlags adds consul related flags the given command
 func addConsulFlags(cmd *cobra.Command) {
-	cmd.Flags().String("prefix", "", "Consul KV prefix")
+	cmd.Flags().String("prefix", "", "Consul KV prefix to combine with job key")
 }
 
 // addTemplateFlags adds template related flags to the given command
@@ -53,22 +98,11 @@ func addTemplateFlags(cmd *cobra.Command) {
 
 // addDeployFlags adds deployment related flags to the given command
 func addDeployFlags(cmd *cobra.Command) {
+	addTemplateFlags(cmd)
 	cmd.Flags().Bool("auto-promote", false, "automatically promote canary deployment")
 	cmd.Flags().Bool("force-count", false, "force task group counts to match template")
 	cmd.Flags().Bool("plan", false, "run job plan before deploying")
 	cmd.Flags().Bool("yes", false, "skips asking for confirmation if plan changes found")
-}
-
-// bindFlags binds command-line flags to the appropriate viper keys
-func bindFlags(cmd *cobra.Command) {
-	bindFlag(cmd, "prefix", "prefix")
-	bindFlag(cmd, "template.left_delimeter", "left-delim")
-	bindFlag(cmd, "template.right_delimeter", "right-delim")
-	bindFlag(cmd, "template.error_on_missing_key", "err-missing-key")
-	bindFlag(cmd, "deploy.auto_promote", "auto-promote")
-	bindFlag(cmd, "deploy.force_count", "force-count")
-	bindFlag(cmd, "deploy.plan", "plan")
-	bindFlag(cmd, "deploy.skip_confirmation", "yes")
 }
 
 // setConfigFromKV sets viper keys based on values in Consul, but only sets

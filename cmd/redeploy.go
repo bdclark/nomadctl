@@ -21,8 +21,7 @@ are configured, you can use the "--auto-promote" flag to automatically
 promote the deployment after the canary(s) are healthy.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// bind relevant cli flags to viper
-		bindFlags(cmd)
+		initConfig(cmd)
 
 		groups, _ := cmd.Flags().GetStringSlice("group")
 
@@ -41,6 +40,7 @@ promote the deployment after the canary(s) are healthy.`,
 func init() {
 	rootCmd.AddCommand(redeployCmd)
 
+	addConfigFlags(redeployCmd)
 	redeployCmd.Flags().Bool("auto-promote", false, "automatically promote canary deployment")
 	redeployCmd.Flags().StringSlice("group", []string{}, "group to redeploy (can be supplied multiple times)")
 }
