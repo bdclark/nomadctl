@@ -55,6 +55,9 @@ func initConfig(cmd *cobra.Command) {
 	bindFlag(cmd, "deploy.force_count", "force-count")
 	bindFlag(cmd, "deploy.plan", "plan")
 	bindFlag(cmd, "deploy.skip_confirmation", "yes")
+	bindFlag(cmd, "plan.no_color", "no-color")
+	bindFlag(cmd, "plan.diff", "diff")
+	bindFlag(cmd, "plan.verbose", "verbose")
 
 	// bind viper to environment variables
 	viper.SetEnvPrefix("nomadctl")
@@ -103,6 +106,15 @@ func addDeployFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("force-count", false, "force task group counts to match template")
 	cmd.Flags().Bool("plan", false, "run job plan before deploying")
 	cmd.Flags().Bool("yes", false, "skips asking for confirmation if plan changes found")
+}
+
+// addPlanFlags adds plan related flags to the given command
+func addPlanFlags(cmd *cobra.Command) {
+	addConfigFlags(cmd)
+	addTemplateFlags(cmd)
+	cmd.Flags().Bool("no-color", false, "disable colorized output")
+	cmd.Flags().Bool("diff", true, "show diff between remote job and planned job")
+	cmd.Flags().Bool("verbose", false, "verbose plan output")
 }
 
 // setConfigFromKV sets viper keys based on values in Consul, but only sets

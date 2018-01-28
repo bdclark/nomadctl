@@ -25,7 +25,11 @@ NOMAD_CAPATH: Path to directory of CA cert files to verify server SSL cert.
 NOMAD_CLIENT_CERT: Path to client cert for TLS authentication to Nomad.
 NOMAD_CLIENT_KEY: Path to an private key matching the client cert.
 NOMAD_SKIP_VERIFY: Do not verify TLS certificate (not recommended).
-NOMAD_TOKEN: The ACL token to use to authenticate API requests.`,
+NOMAD_TOKEN: The ACL token to use to authenticate API requests.
+
+For any of the "kv" subcommands that query Consul, client settings must
+be configured via the standard Consul environment variables. See
+https://www.consul.io/docs/commands/index.html#environment-variables.`,
 	Version: version.Get(true),
 }
 

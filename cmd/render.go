@@ -10,10 +10,19 @@ import (
 	"github.com/spf13/viper"
 )
 
-// renderCmd represents the render command
 var renderCmd = &cobra.Command{
-	Use:   "render TEMPLATE",
+	Use:   "render",
 	Short: "Render a job template to stdout",
+	Long: `Renders a Nomad job template using Consul-Template to standard output.
+
+To render a template with the source specified on the command-line, use the
+"render template" sub-command. To render a template with the source, contents,
+or other setttings specified in Consul, use the "render kv" sub-command.`,
+}
+
+var renderTemplateCmd = &cobra.Command{
+	Use:   "template SOURCE",
+	Short: "Render a job template specified locally",
 	Long: `Renders a Nomad job template using Consul-Template to standard output.
 
 The specified template source can either be a path to a template on the
@@ -24,7 +33,7 @@ locations using a URL as the input source.  Go-getter options can be
 supplied with command-line flags or config file settings.
 
 The template is rendered using Consul-Template using the default
-delimeters of "{{" and "}}", but can be overriden with command-line
+delimeters of "{{" and "}}", but can be overridden with command-line
 flags or config file settings.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -36,32 +45,38 @@ flags or config file settings.`,
 
 var renderKVCmd = &cobra.Command{
 	Use:   "kv JOBKEY",
-	Short: "Render a job template from Consul",
-	Long: `Renders a Nomad job template using Consul-Template to standard output,
-using configuration information stored in Consul.
+	Short: "Render a job template specified in Consul",
+	Long: `Renders a Nomad job template using Consul-Template to standard output
+with configuration information stored in Consul.
 
-The specified job key is a prefix that is expected to have one or more
-sub-keys.  If a "prefix" is specified via command-line flag, config file,
-or environment variable, the the actual job key becomes "<prefix>/<jobkey>".
+The required JOBKEY argument is a Consul KV path and is expected to have one
+or more sub-keys. If a "prefix" is specified via command-line flag, config
+file setting or environment variable, the the actual JOBKEY becomes
+"${PREFIX}/${JOBKEY}".
 
 The following Consul keys are supported:
-"<jobkey>/template/source" the source of the template
-"<jobkey>/template/contents" template contents (mutually exlusive of source)
-"<jobkey>/template/left_delimeter" same as --left-delim flag
-"<jobkey>/template/right_delimeter" same as --right-delim flag
-"<jobkey>/template/error_on_missing_key" same as --err-missing-key flag
-"<jobkey>/template/options/*" go-getter options if source is URL
+
+"${JOBKEY}/template/source" the source of the template
+"${JOBKEY}/template/contents" template contents (mutually exclusive of source)
+"${JOBKEY}/template/left_delimeter" same as "--left-delim" flag
+"${JOBKEY}/template/right_delimeter" same as "--right-delim" flag
+"${JOBKEY}/template/error_on_missing_key" same as" --err-missing-key" flag
+"${JOBKEY}/template/options/*" go-getter options if source is URL
 
 The specified template source can either be a path to a template on the
-local filesystem, or a remote artifact. Similar to Nomad's artifact
+local filesystem or a remote artifact. Similar to Nomad's artifact
 retrieval, nomadctl downloads remote artifacts using the go-getter
 library, which permits the downloading of artifacts from a variety of
 locations using a URL as the input source.  Go-getter options can be
 supplied with consul keys, command-line flags or config file settings.
 
+In addition to standard getter options, a "path" option is supported,
+and is required if the source URL is a compressed archive or VCS repo
+that constains more than one file.
+
 Settings in Consul override config file and environment variable settings,
-However, if a command-line flag is specfied, it overrides anything
-found in Consul.`,
+However, if a command-line flag is specified, it overrides the related
+setting found in Consul.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig(cmd)
@@ -71,10 +86,11 @@ found in Consul.`,
 
 func init() {
 	rootCmd.AddCommand(renderCmd)
+	renderCmd.AddCommand(renderTemplateCmd)
 	renderCmd.AddCommand(renderKVCmd)
 
-	addConfigFlags(renderCmd)
-	addTemplateFlags(renderCmd)
+	addConfigFlags(renderTemplateCmd)
+	addTemplateFlags(renderTemplateCmd)
 
 	addConfigFlags(renderKVCmd)
 	addConsulFlags(renderKVCmd)

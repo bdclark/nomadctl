@@ -9,17 +9,30 @@ import (
 )
 
 var planCmd = &cobra.Command{
-	Use:   "plan TEMPLATE",
+	Use:   "plan",
 	Short: "Plan a job from a template",
-	Long: `Renders a Nomad job template using Consul-Template then envokes
+	Long: `Renders a Nomad job template using Consul-Template then invokes
 the scheduler in a dry-run mode to determine what would happen if the job
 is submitted.
 
-See "nomadctl help render" for details regarding the template source,
-rendering options, and supported Consul keys.
+To plan a job with the template source and options specified on the
+command-line, use the "plan template" sub-command. To plan a job with the
+template source and options specified in Consul, use the "plan kv"
+sub-command.`,
+}
+
+var planTemplateCmd = &cobra.Command{
+	Use:   "plan SOURCE",
+	Short: "Plan a job from a template",
+	Long: `Renders a Nomad job template using Consul-Template then invokes
+the scheduler in a dry-run mode to determine what would happen if the job
+is submitted.
+
+See "nomadctl help render template" for details regarding the template
+source and template rendering options.
 
 Once rendered, the plan is executed and shown as standard output.
-Display options can be set with various command-line flags.`,
+Display options can be set with command-line flags.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig(cmd)
@@ -31,19 +44,20 @@ Display options can be set with various command-line flags.`,
 var planKVCmd = &cobra.Command{
 	Use:   "kv JOBKEY",
 	Short: "Plan a job defined in Consul",
-	Long: `Renders a Nomad job template using Consul-Template then envokes
+	Long: `Renders a Nomad job template using Consul-Template then invokes
 the scheduler in a dry-run mode to determine what would happen if the job
 is submitted.
 
-The specified job key is a prefix that is expected to have one or more
-sub-keys. If a "prefix" is specified via command-line flag, config file,
-or environment variable, the the actual job key becomes "<prefix>/<jobkey>".
+The required JOBKEY argument is a Consul KV path and is expected to have one
+or more sub-keys. If a "prefix" is specified via command-line flag, config
+file setting or environment variable, the the actual JOBKEY becomes
+"${PREFIX}/${JOBKEY}".
 
 See "nomadctl help render kv" for details regarding the template source,
 rendering options, and supported Consul keys.
 
 Once rendered, the plan is executed and shown as standard output.
-Display options can be set with various command-line flags`,
+Display options can be set with command-line flags`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig(cmd)
@@ -53,22 +67,13 @@ Display options can be set with various command-line flags`,
 
 func init() {
 	rootCmd.AddCommand(planCmd)
+	planCmd.AddCommand(planTemplateCmd)
 	planCmd.AddCommand(planKVCmd)
 
-	addConfigFlags(planCmd)
-	addTemplateFlags(planCmd)
+	addPlanFlags(planCmd)
 
-	addConfigFlags(planKVCmd)
 	addConsulFlags(planKVCmd)
-	addTemplateFlags(planKVCmd)
-
-	planCmd.PersistentFlags().Bool("no-color", false, "disable colorized output")
-	planCmd.PersistentFlags().Bool("diff", true, "show diff between remote job and planned job")
-	planCmd.PersistentFlags().Bool("verbose", false, "verbose plan output")
-
-	viper.BindPFlag("plan.no_color", planCmd.PersistentFlags().Lookup("no-color"))
-	viper.BindPFlag("plan.diff", planCmd.PersistentFlags().Lookup("diff"))
-	viper.BindPFlag("plan.verbose", planCmd.PersistentFlags().Lookup("verbose"))
+	addPlanFlags(planKVCmd)
 }
 
 func doPlan(cmd *cobra.Command, consulJobKey string) {
