@@ -1,3 +1,77 @@
+Release v1.12.70 (2018-01-26)
+===
+
+### Service Client Updates
+* `service/devicefarm`: Updates service API and documentation
+  * Add InteractionMode in CreateRemoteAccessSession for DirectDeviceAccess feature.
+* `service/medialive`: Updates service API and documentation
+  * Add InputSpecification to CreateChannel (specification of input attributes is used for channel sizing and affects pricing);  add NotFoundException to DeleteInputSecurityGroups.
+* `service/mturk-requester`: Updates service documentation
+
+Release v1.12.69 (2018-01-26)
+===
+
+### SDK Bugs
+* `models/api`: Fix colliding names [#1754](https://github.com/aws/aws-sdk-go/pull/1754) [#1756](https://github.com/aws/aws-sdk-go/pull/1756)
+    * SDK had duplicate folders that were causing errors in some builds.
+    * Fixes [#1753](https://github.com/aws/aws-sdk-go/issues/1753)
+Release v1.12.68 (2018-01-25)
+===
+
+### Service Client Updates
+* `service/alexaforbusiness`: Updates service API and documentation
+* `service/codebuild`: Updates service API and documentation
+  * Adding support for Shallow Clone and GitHub Enterprise in AWS CodeBuild.
+* `aws/endpoints`: Updated Regions and Endpoints metadata.
+* `service/guardduty`: Adds new service
+  * Added the missing AccessKeyDetails object to the resource shape.
+* `service/lambda`: Updates service API and documentation
+  * AWS Lambda now supports Revision ID on your function versions and aliases, to track and apply conditional updates when you are updating your function version or alias resources.
+
+### SDK Bugs
+* `service/s3/s3manager`: Fix check for nil OrigErr in Error() [#1749](https://github.com/aws/aws-sdk-go/issues/1749)
+    * S3 Manager's `Error` type did not check for nil of `OrigErr` when calling `Error()`
+    * Fixes [#1748](https://github.com/aws/aws-sdk-go/issues/1748)
+Release v1.12.67 (2018-01-22)
+===
+
+### Service Client Updates
+* `service/budgets`: Updates service API and documentation
+  * Add additional costTypes: IncludeDiscount, UseAmortized,  to support finer control for different charges included in a cost budget.
+
+Release v1.12.66 (2018-01-19)
+===
+
+### Service Client Updates
+* `aws/endpoints`: Updated Regions and Endpoints metadata.
+* `service/glue`: Updates service API and documentation
+  * New AWS Glue DataCatalog APIs to manage table versions and a new feature to skip archiving of the old table version when updating table.
+* `service/transcribe`: Adds new service
+
+Release v1.12.65 (2018-01-18)
+===
+
+### Service Client Updates
+* `service/sagemaker`: Updates service API and documentation
+  * CreateTrainingJob and CreateEndpointConfig now supports KMS Key for volume encryption.
+
+Release v1.12.64 (2018-01-17)
+===
+
+### Service Client Updates
+* `service/autoscaling-plans`: Updates service documentation
+* `service/ec2`: Updates service documentation
+  * Documentation updates for EC2
+
+Release v1.12.63 (2018-01-17)
+===
+
+### Service Client Updates
+* `service/application-autoscaling`: Updates service API and documentation
+* `service/autoscaling-plans`: Adds new service
+* `service/rds`: Updates service API and documentation
+  * With this release you can now integrate RDS DB instances with CloudWatch Logs. We have added parameters to the operations for creating and modifying DB instances (for example CreateDBInstance) to allow you to take advantage of this capability through the CLI and API. Once you enable this feature, a stream of log events will publish to CloudWatch Logs for each log type you enable.
+
 Release v1.12.62 (2018-01-15)
 ===
 
