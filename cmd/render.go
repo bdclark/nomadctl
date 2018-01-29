@@ -54,6 +54,13 @@ or more sub-keys. If a "prefix" is specified via command-line flag, config
 file setting or environment variable, the the actual JOBKEY becomes
 "${PREFIX}/${JOBKEY}".
 
+This command sets the following environment variables for use in template
+rendering:
+
+NOMADCTL_PREFIX - the prefix specified via config or command-line flag
+NOMADCTL_CLI_JOBKEY - the specified JOBKEY argument without prefix
+NOMADCTL_JOBKEY - the actual job key, effectively "${PREFIX}/${JOBKEY}"
+
 The following Consul keys are supported:
 
 "${JOBKEY}/template/source" the source of the template
@@ -114,8 +121,8 @@ func doRender(cmd *cobra.Command, consulJobKey string) []byte {
 
 		if k := canonicalizeJobKey(consulJobKey); consulJobKey != "" && k != "" {
 			os.Setenv("NOMADCTL_PREFIX", viper.GetString("prefix"))
-			os.Setenv("NOMADCTL_CLI_JOB_KEY", consulJobKey)
-			os.Setenv("NOMADCTL_JOB_KEY", k)
+			os.Setenv("NOMADCTL_CLI_JOBKEY", consulJobKey)
+			os.Setenv("NOMADCTL_JOBKEY", k)
 		}
 	}
 
