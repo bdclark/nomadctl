@@ -132,7 +132,6 @@ func ReDeploy(i *RedeploymentInput) (bool, error) {
 	d.autoPromote = i.AutoPromote
 
 	// deploy it
-	d.Plan(false, true, false)
 	return d.Deploy()
 }
 
