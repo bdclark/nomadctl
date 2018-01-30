@@ -87,7 +87,8 @@ func doPlan(cmd *cobra.Command, consulJobKey string) {
 	}
 
 	// run a deployment plan
-	changes, err := deployment.Plan(viper.GetBool("plan.verbose"), viper.GetBool("plan.diff"), viper.GetBool("plan.no_color"))
+	changes, err := deployment.Plan(viper.GetBool("plan.quiet"), viper.GetBool("plan.verbose"),
+		viper.GetBool("plan.diff"), viper.GetBool("plan.no_color"))
 	if err != nil {
 		bail(err, 1)
 	}

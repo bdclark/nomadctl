@@ -29,6 +29,8 @@ commands are currently available.
 * `deploy (template|kv)` - Deploy a job, either with template and deploy options specified locally (`template`) or using configuration specified in Consul (`kv`).
 * `drain` - Drain a client node and wait until done.
 * `gc` - Force cluster garbage collection.
+* `kv list` - List jobs stored in Consul.
+* `kv set` - Set a job-specific Consul key.
 * `re-eval` - Re-evaluate a job or all jobs.
 * `redeploy` - Re-deploy a job, causing a "rolling restart".
 * `restart` - Restart a job or task group.
@@ -72,6 +74,7 @@ deploy:
 plan:
   no_color: false
   diff: true
+  quiet: false
   verbose: false
 ```
 

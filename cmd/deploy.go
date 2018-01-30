@@ -127,7 +127,7 @@ func doDeploy(cmd *cobra.Command, consulJobKey string) {
 
 	// run a job plan if specified
 	if viper.GetBool("deploy.plan") {
-		changes, err := deployment.Plan(false, true, false)
+		changes, err := deployment.Plan(false, false, true, false)
 		if err != nil {
 			bail(err, 1)
 		}
