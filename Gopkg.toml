@@ -1,0 +1,45 @@
+
+[[constraint]]
+  name = "github.com/hashicorp/consul"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/hashicorp/consul-template"
+  version = "0.19.4"
+
+[[constraint]]
+  name = "github.com/hashicorp/nomad"
+  version = "0.7.1"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.0"
+
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "1.0.4"
+
+[[constraint]]
+  name = "github.com/spf13/cobra"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/spf13/viper"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/hashicorp/go-getter"
+  branch = "master"
+
+# HACK: fix issue w/ nomad dependencies
+[[override]]
+  name = "github.com/ugorji/go"
+  revision = "5efa3251c7f7d05e5d9704a69a984ec9f1386a40"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/hashicorp/logutils"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/mitchellh/colorstring"
