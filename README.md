@@ -74,6 +74,7 @@ deploy:
 plan:
   no_color: false
   diff: true
+  quiet: false
   verbose: false
 ```
 

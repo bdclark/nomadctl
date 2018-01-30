@@ -43,6 +43,7 @@ func initConfig(cmd *cobra.Command) {
 	viper.SetDefault("plan", map[string]interface{}{
 		"no_color": false,
 		"diff":     true,
+		"quiet":    false,
 		"verbose":  false,
 	})
 
@@ -57,6 +58,7 @@ func initConfig(cmd *cobra.Command) {
 	bindFlag(cmd, "deploy.skip_confirmation", "yes")
 	bindFlag(cmd, "plan.no_color", "no-color")
 	bindFlag(cmd, "plan.diff", "diff")
+	bindFlag(cmd, "plan.quiet", "quiet")
 	bindFlag(cmd, "plan.verbose", "verbose")
 
 	// bind viper to environment variables
@@ -114,6 +116,7 @@ func addPlanFlags(cmd *cobra.Command) {
 	addTemplateFlags(cmd)
 	cmd.Flags().Bool("no-color", false, "disable colorized output")
 	cmd.Flags().Bool("diff", true, "show diff between remote job and planned job")
+	cmd.Flags().Bool("quiet", false, "no plan output (just return status)")
 	cmd.Flags().Bool("verbose", false, "verbose plan output")
 }
 

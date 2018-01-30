@@ -56,8 +56,14 @@ file setting or environment variable, the the actual JOBKEY becomes
 See "nomadctl help render kv" for details regarding the template source,
 rendering options, and supported Consul keys.
 
-Once rendered, the plan is executed and shown as standard output.
-Display options can be set with command-line flags`,
+Once rendered, unless the "quiet" command-line flag is specified, a
+structured diff between the local and remote job is displayed to give
+insight into what the scheduler will attempt to do and why.
+
+One of the following exit codes will be returned:
+* 0: No allocations created or destroyed.
+* 1: Allocations created or destroyed.
+* 255: Error determining plan results.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig(cmd)
@@ -78,18 +84,19 @@ func init() {
 
 func doPlan(cmd *cobra.Command, consulJobKey string) {
 	// render template (and set related consul config if applicable)
-	jobspec := doRender(cmd, consulJobKey)
+	jobspec := doRender(cmd, consulJobKey, 255)
 
 	// create new deployment
 	deployment, err := deploy.NewDeployment(&deploy.NewDeploymentInput{Jobspec: &jobspec})
 	if err != nil {
-		bail(err, 1)
+		bail(err, 255)
 	}
 
 	// run a deployment plan
-	changes, err := deployment.Plan(viper.GetBool("plan.verbose"), viper.GetBool("plan.diff"), viper.GetBool("plan.no_color"))
+	changes, err := deployment.Plan(viper.GetBool("plan.quiet"), viper.GetBool("plan.verbose"),
+		viper.GetBool("plan.diff"), viper.GetBool("plan.no_color"))
 	if err != nil {
-		bail(err, 1)
+		bail(err, 255)
 	}
 
 	// exit non-zero if allocation changes

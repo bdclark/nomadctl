@@ -21,7 +21,7 @@ import (
 
 // Plan executes a Nomad plan, writes the output to standard out, and
 // returns whether any allocations will be created/destroyed
-func (d *Deployment) Plan(verbose, diff, noColor bool) (bool, error) {
+func (d *Deployment) Plan(quiet, verbose, diff, noColor bool) (bool, error) {
 	// force the region to be that of the job.
 	if r := d.job.Region; r != nil {
 		d.client.SetRegion(*r)
@@ -41,6 +41,11 @@ func (d *Deployment) Plan(verbose, diff, noColor bool) (bool, error) {
 		return false, errors.Wrap(err, "plan failed")
 	}
 	d.jobModifyIndex = resp.JobModifyIndex
+
+	if quiet {
+		// don't display, just return whether changes planned
+		return areChangesPlanned(resp), nil
+	}
 
 	colorize := &colorstring.Colorize{
 		Colors:  colorstring.DefaultColors,
@@ -66,13 +71,19 @@ func (d *Deployment) Plan(verbose, diff, noColor bool) (bool, error) {
 	// print job index info
 	fmt.Println(colorize.Color(fmt.Sprintf("[reset][bold]Job Modify Index: %d[reset]", resp.JobModifyIndex)))
 
-	// Check for allocation changes and return accordingly
+	// check for allocation changes and return accordingly
+	return areChangesPlanned(resp), nil
+}
+
+// areChangesPlanned checks a job plan for allocation changes and returns
+// true if any allocations will be created/destroyed
+func areChangesPlanned(resp *api.JobPlanResponse) bool {
 	for _, d := range resp.Annotations.DesiredTGUpdates {
 		if d.Stop+d.Place+d.Migrate+d.DestructiveUpdate+d.Canary > 0 {
-			return true, nil
+			return true
 		}
 	}
-	return false, nil
+	return false
 }
 
 // formatDryRun produces a string explaining the results of the dry run.

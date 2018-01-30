@@ -39,7 +39,7 @@ flags or config file settings.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig(cmd)
 		viper.Set("template.source", args[0])
-		fmt.Fprintf(os.Stdout, "%s", doRender(cmd, ""))
+		fmt.Fprintf(os.Stdout, "%s", doRender(cmd, "", 1))
 	},
 }
 
@@ -87,7 +87,7 @@ setting found in Consul.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig(cmd)
-		fmt.Fprintf(os.Stdout, "%s", doRender(cmd, args[0]))
+		fmt.Fprintf(os.Stdout, "%s", doRender(cmd, args[0], 1))
 	},
 }
 
@@ -104,19 +104,19 @@ func init() {
 	addTemplateFlags(renderKVCmd)
 }
 
-func doRender(cmd *cobra.Command, consulJobKey string) []byte {
+func doRender(cmd *cobra.Command, consulJobKey string, failCode int) []byte {
 	initConfig(cmd)
 
 	// update viper settings from Consul
 	if consulJobKey != "" {
 		client, err := consul.NewClient(consul.DefaultConfig())
 		if err != nil {
-			bail(err, 1)
+			bail(err, failCode)
 		}
 
 		err = setConfigFromKV(cmd, client, consulJobKey)
 		if err != nil {
-			bail(err, 1)
+			bail(err, failCode)
 		}
 
 		if k := canonicalizeJobKey(consulJobKey); consulJobKey != "" && k != "" {
@@ -139,13 +139,13 @@ func doRender(cmd *cobra.Command, consulJobKey string) []byte {
 	// create template
 	template, err := template.NewTemplate(config)
 	if err != nil {
-		bail(err, 1)
+		bail(err, failCode)
 	}
 
 	// render template
 	output, err := template.Render()
 	if err != nil {
-		bail(err, 1)
+		bail(err, failCode)
 	}
 	return output
 }
