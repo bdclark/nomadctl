@@ -6,22 +6,35 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/pkg/errors"
+	"github.com/bdclark/nomadctl/logging"
 	"github.com/spf13/viper"
 
 	consul "github.com/hashicorp/consul/api"
 	"github.com/spf13/cobra"
 )
 
+// kvCmd represents the base "kv" command
 var kvCmd = &cobra.Command{
 	Use:   "kv",
 	Short: "commands for interacting with Consul",
 }
 
+// kvListCmd represents the "kv list" command
 var kvListCmd = &cobra.Command{
 	Use:   "list [PREFIX]",
 	Short: "list jobs stored in Consul",
-	Args:  cobra.MaximumNArgs(1),
+	Long: `Lists jobs stored in Consul based on specified prefix.
+
+The list command expects job configs to be stored in Consul in the
+format "${PREFIX}/${JOB}/*". The prefix must be supplied as an argument
+if not set via configuration file or environment variable.
+
+By default, the list command will list job names only, but if the format
+flag is used with a template string, other settings within the job's
+keyspace can be displayed. The job name is {{ .Key }} and the job's config
+is {{ .Value }}, so "{{ .Job }} {{ .Value.deploy.auto_promote }}\n" would
+display the job name and auto promotion setting for all jobs at PREFIX.`,
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		initConfig(cmd)
 
@@ -64,7 +77,7 @@ var kvListCmd = &cobra.Command{
 			})
 		}
 
-		t, _ := cmd.Flags().GetString("template")
+		t, _ := cmd.Flags().GetString("format")
 		if t == "" {
 			t = "{{ .Key }}"
 		}
@@ -77,45 +90,65 @@ var kvListCmd = &cobra.Command{
 	},
 }
 
+// kvSetCmd represents the "kv set" command
+var kvSetCmd = &cobra.Command{
+	Use:   "set JOBKEY SUBKEY VALUE",
+	Short: "set job related key in Consul",
+	Long: `Sets a Consul key to the specified value, with the KV path being
+an (optional) prefix, a job-key and a sub-key.
+
+The required JOBKEY argument is a Consul KV path and is expected to have one
+or more sub-keys. If a "prefix" is specified via command-line flag, config
+file setting or environment variable, the the actual JOBKEY becomes
+"${PREFIX}/${JOBKEY}".
+
+The required SUBKEY argument is combined with the JOBKEY (and optional prefix)
+to form a full Consul KV path ${PREFIX}/${JOBKEY}/${SUBKEY}.
+
+This command makes the most sense when a prefix is configured as a default.
+For example, if the prefix "nomad/jobs" is set in a configuration file, then
+"nomadctl kv set myjob deploy/auto_promotion true" will write to the kv path
+"nomad/jobs/myjob/deploy/auto_promotion".`,
+	Args: cobra.ExactArgs(3),
+	Run: func(cmd *cobra.Command, args []string) {
+		initConfig(cmd)
+
+		key := fmt.Sprintf("%s/%s", canonicalizeJobKey(args[0]), args[1])
+		value := args[2]
+
+		force, _ := cmd.Flags().GetBool("yes")
+		if !force {
+			yes := askForConfirmation(fmt.Sprintf("Are you sure you want to set: %s?", key))
+			if !yes {
+				fmt.Fprintln(os.Stderr, "No changes made.")
+				os.Exit(0)
+			}
+		}
+
+		logging.Debug("writing value \"%\" to key \"%s\"", value, key)
+
+		client, err := consul.NewClient(consul.DefaultConfig())
+		if err != nil {
+			bail(err, 1)
+		}
+
+		_, err = client.KV().Put(&consul.KVPair{Key: key, Value: []byte(value)}, nil)
+		if err != nil {
+			bail(err, 1)
+		}
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Successfully wrote to: %s", key))
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(kvCmd)
 	kvCmd.AddCommand(kvListCmd)
+	kvCmd.AddCommand(kvSetCmd)
 
-	kvListCmd.Flags().String("template", "", "format and display allocation using a Go template")
-}
+	addConfigFlags(kvListCmd)
+	kvListCmd.Flags().String("format", "", "format and display jobs using a Go template")
 
-// explode is used to expand a list of keypairs into a deeply-nested hash.
-func explode(pairs *consul.KVPairs, prefix string) (map[string]interface{}, error) {
-	m := make(map[string]interface{})
-	for _, pair := range *pairs {
-		key := strings.TrimPrefix(pair.Key, prefix)
-		if err := explodeHelper(m, key, string(pair.Value[:]), key); err != nil {
-			return nil, errors.Wrap(err, "explode")
-		}
-	}
-	return m, nil
-}
-
-// explodeHelper is a recursive helper for explode.
-func explodeHelper(m map[string]interface{}, k, v, p string) error {
-	if strings.Contains(k, "/") {
-		parts := strings.Split(k, "/")
-		top := parts[0]
-		key := strings.Join(parts[1:], "/")
-
-		if _, ok := m[top]; !ok {
-			m[top] = make(map[string]interface{})
-		}
-		nest, ok := m[top].(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("not a map: %q: %q already has value %q", p, top, m[top])
-		}
-		return explodeHelper(nest, key, v, k)
-	}
-
-	if k != "" {
-		m[k] = v
-	}
-
-	return nil
+	addConfigFlags(kvSetCmd)
+	addConsulFlags(kvSetCmd)
+	kvSetCmd.Flags().Bool("yes", false, "skips asking for confirmation")
 }

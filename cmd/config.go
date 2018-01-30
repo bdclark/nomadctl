@@ -13,11 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func addConfigFlags(cmd *cobra.Command) {
-	cmd.Flags().String("log-level", "INFO", "logging level")
-	cmd.Flags().String("config", "", "config file to use (default is $HOME/.nomadctl.yaml)")
-}
-
 func initConfig(cmd *cobra.Command) {
 	// setup logging level
 	if level, _ := cmd.Flags().GetString("log-level"); level != "" {
@@ -84,6 +79,12 @@ func initConfig(cmd *cobra.Command) {
 	} else {
 		logging.Debug("failed to read config file \"%s\": %v", viper.ConfigFileUsed(), err)
 	}
+}
+
+// addConfigFlags adds flags for commands that support viper configuration
+func addConfigFlags(cmd *cobra.Command) {
+	cmd.Flags().String("log-level", "INFO", "logging level")
+	cmd.Flags().String("config", "", "config file to use (default is $HOME/.nomadctl.yaml)")
 }
 
 // addConsulFlags adds consul related flags the given command

@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/bdclark/nomadctl/deploy"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -146,26 +143,5 @@ func doDeploy(cmd *cobra.Command, consulJobKey string) {
 	// deploy
 	if _, err = deployment.Deploy(); err != nil {
 		bail(err, 1)
-	}
-}
-
-func askForConfirmation(s string) bool {
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		fmt.Printf("%s [y/n]: ", s)
-
-		response, err := reader.ReadString('\n')
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		response = strings.ToLower(strings.TrimSpace(response))
-
-		if response == "y" || response == "yes" {
-			return true
-		} else if response == "n" || response == "no" {
-			return false
-		}
 	}
 }
