@@ -201,6 +201,11 @@ func (d *Deployment) Deploy() (success bool, err error) {
 			return false, err
 		}
 
+		if d.deploymentID == "" {
+			logging.Info("no deployment ID found, monitoring for running status")
+			return d.waitJobRunning()
+		}
+
 		logging.Info("monitoring deployment \"%s\"", limit(d.deploymentID, d.idLen))
 		success, err = d.monitorDeployment()
 
