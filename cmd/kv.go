@@ -140,10 +140,54 @@ key "nomad/jobs/myjob/deploy/auto_promote".`,
 	},
 }
 
+var kvGetCmd = &cobra.Command{
+	Use:   "get JOBKEY SUBKEY",
+	Short: "Get a job-related key in Consul",
+	Long: `A convenience utility to get a job-related key in Consul without requiring
+the consul binary or other external tools.
+
+The required JOBKEY argument is a Consul KV path and is expected to have one
+or more sub-keys. If a "prefix" is specified via command-line flag, config
+file setting or environment variable, the the actual JOBKEY becomes
+"${PREFIX}/${JOBKEY}".
+
+The required SUBKEY argument is combined with the JOBKEY (and optional
+prefix) to form the complete KV path ${PREFIX}/${JOBKEY}/${SUBKEY}.
+
+The get command is most useful when a prefix is set as a default. For
+example, "prefix" is set to "nomad/jobs" in a config file, then
+"nomadctl kv get myjob deploy/auto_promote" would get the value of
+key "nomad/jobs/myjob/deploy/auto_promote".`,
+	Args: cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		initConfig(cmd)
+
+		subkey := strings.TrimPrefix(args[1], "/")
+		key := fmt.Sprintf("%s/%s", canonicalizeJobKey(args[0]), subkey)
+
+		client, err := consul.NewClient(consul.DefaultConfig())
+		if err != nil {
+			bail(err, 1)
+		}
+
+		kv, _, err := client.KV().Get(key, nil)
+		if err != nil {
+			bail(err, 1)
+		}
+		if kv == nil {
+			fmt.Fprintf(os.Stderr, "No key exists at: %s\n", key)
+			os.Exit(1)
+		}
+
+		fmt.Println(string(kv.Value))
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(kvCmd)
 	kvCmd.AddCommand(kvListCmd)
 	kvCmd.AddCommand(kvSetCmd)
+	kvCmd.AddCommand(kvGetCmd)
 
 	addConfigFlags(kvListCmd)
 	kvListCmd.Flags().String("format", "", "format job list with Go template")
@@ -151,4 +195,6 @@ func init() {
 	addConfigFlags(kvSetCmd)
 	addConsulFlags(kvSetCmd)
 	kvSetCmd.Flags().Bool("yes", false, "skips asking for confirmation")
+
+	addConsulFlags(kvGetCmd)
 }
