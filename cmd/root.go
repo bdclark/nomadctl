@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/bdclark/nomadctl/version"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +41,7 @@ func Execute() {
 }
 
 func bail(err error, code int) {
-	log.Fatal(err)
+	fmt.Fprintln(os.Stderr, err)
 	os.Exit(code)
 }
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/bdclark/nomadctl/deploy"
@@ -64,8 +65,10 @@ One of the following exit codes will be returned:
 * 0: No allocations created or destroyed.
 * 1: Allocations created or destroyed.
 * 255: Error determining plan results.`,
-	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			usageError(cmd, fmt.Sprintf("accepts 1 arg, received %v", len(args)), 255)
+		}
 		initConfig(cmd)
 		doPlan(cmd, args[0])
 	},
