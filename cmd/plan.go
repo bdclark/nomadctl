@@ -79,7 +79,7 @@ func init() {
 	planCmd.AddCommand(planTemplateCmd)
 	planCmd.AddCommand(planKVCmd)
 
-	addPlanFlags(planCmd)
+	addPlanFlags(planTemplateCmd)
 
 	addConsulFlags(planKVCmd)
 	addPlanFlags(planKVCmd)
