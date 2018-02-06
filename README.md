@@ -58,8 +58,8 @@ prefix: ""
 
 # render, plan, deploy, and redeploy commands use these settings
 template:
-  left_delimeter: '{{'
-  right_delimeter: '}}'
+  left_delimiter: '{{'
+  right_delimiter: '}}'
   error_on_missing_key: false
   options: {}
 
@@ -82,11 +82,11 @@ plan:
 Any of the config settings can also be set via environment variable using the
 pattern `NOMADCTL_<KEY>`, where `<KEY>` is the upper-cased config file key
 shown above with `.` replaced with `_`. For example, to set the left and right
-template delimeters via environment variables, you could use:
+template delimiters via environment variables, you could use:
 
 ```shell
-export NOMADCTL_TEMPLATE_LEFT_DELIMETER="[["
-export NOMADCTL_TEMPLATE_RIGHT_DELIMETER="]]"
+export NOMADCTL_TEMPLATE_LEFT_DELIMITER="[["
+export NOMADCTL_TEMPLATE_RIGHT_DELIMITER="]]"
 ```
 
 ### Consul Keys
@@ -94,8 +94,8 @@ The following Consul keys are supported and are equivalent to their related
 config file settings, but are job-specific:
 
 ```
-${JOBKEY}/template/left_delimeter
-${JOBKEY}/template/right_delimeter
+${JOBKEY}/template/left_delimiter
+${JOBKEY}/template/right_delimiter
 ${JOBKEY}/template/error_on_missing_key
 ${JOBKEY}/template/options/*
 ${JOBKEY}/deploy/auto_promote

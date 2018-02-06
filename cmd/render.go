@@ -33,7 +33,7 @@ locations using a URL as the input source.  Go-getter options can be
 supplied with command-line flags or config file settings.
 
 The template is rendered using Consul-Template using the default
-delimeters of "{{" and "}}", but can be overridden with command-line
+delimiters of "{{" and "}}", but can be overridden with command-line
 flags or config file settings.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -65,8 +65,8 @@ The following Consul keys are supported:
 
 "${JOBKEY}/template/source" the source of the template
 "${JOBKEY}/template/contents" template contents (mutually exclusive of source)
-"${JOBKEY}/template/left_delimeter" same as "--left-delim" flag
-"${JOBKEY}/template/right_delimeter" same as "--right-delim" flag
+"${JOBKEY}/template/left_delimiter" same as "--left-delim" flag
+"${JOBKEY}/template/right_delimiter" same as "--right-delim" flag
 "${JOBKEY}/template/error_on_missing_key" same as" --err-missing-key" flag
 "${JOBKEY}/template/options/*" go-getter options if source is URL
 
@@ -130,8 +130,8 @@ func doRender(cmd *cobra.Command, consulJobKey string, failCode int) []byte {
 	config := &template.NewTemplateInput{
 		Source:        viper.GetString("template.source"),
 		Contents:      viper.GetString("template.contents"),
-		LeftDelim:     viper.GetString("template.left_delimeter"),
-		RightDelim:    viper.GetString("template.right_delimeter"),
+		LeftDelim:     viper.GetString("template.left_delimiter"),
+		RightDelim:    viper.GetString("template.right_delimiter"),
 		ErrMissingKey: viper.GetBool("template.error_on_missing_key"),
 		Options:       viper.GetStringMapString("template.options"),
 	}

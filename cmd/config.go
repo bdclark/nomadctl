@@ -27,8 +27,8 @@ func initConfig(cmd *cobra.Command) {
 	// set configuration defaults
 	viper.SetDefault("prefix", "")
 	viper.SetDefault("template", map[string]interface{}{
-		"left_delimeter":       "{{",
-		"right_delimeter":      "}}",
+		"left_delimiter":       "{{",
+		"right_delimiter":      "}}",
 		"source":               "",
 		"contents":             "",
 		"error_on_missing_key": false,
@@ -49,8 +49,8 @@ func initConfig(cmd *cobra.Command) {
 
 	// bind viper to command-line flags
 	bindFlag(cmd, "prefix", "prefix")
-	bindFlag(cmd, "template.left_delimeter", "left-delim")
-	bindFlag(cmd, "template.right_delimeter", "right-delim")
+	bindFlag(cmd, "template.left_delimiter", "left-delim")
+	bindFlag(cmd, "template.right_delimiter", "right-delim")
 	bindFlag(cmd, "template.error_on_missing_key", "err-missing-key")
 	bindFlag(cmd, "deploy.auto_promote", "auto-promote")
 	bindFlag(cmd, "deploy.force_count", "force-count")
@@ -144,9 +144,9 @@ func setConfigFromKV(cmd *cobra.Command, client *consul.Client, jobKey string) e
 		switch key {
 		case "template/source":
 			setConfigFromKVHelper(cmd, "source", key, value)
-		case "template/left_delimeter":
+		case "template/left_delimiter":
 			setConfigFromKVHelper(cmd, "left-delim", key, value)
-		case "template/right_delimeter":
+		case "template/right_delimiter":
 			setConfigFromKVHelper(cmd, "left-delim", key, value)
 		case "template/error_on_missing_key":
 			setConfigFromKVHelper(cmd, "err-missing-key", key, value)
