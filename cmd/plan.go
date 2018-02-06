@@ -23,7 +23,7 @@ sub-command.`,
 }
 
 var planTemplateCmd = &cobra.Command{
-	Use:   "plan SOURCE",
+	Use:   "template SOURCE",
 	Short: "Plan a job from a template",
 	Long: `Renders a Nomad job template using Consul-Template then invokes
 the scheduler in a dry-run mode to determine what would happen if the job
