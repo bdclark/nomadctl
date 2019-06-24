@@ -27,7 +27,6 @@ commands are currently available.
 * `render (template|kv)` - Render a template to stdout, either specified locally (`template`) or using configuration specified in Consul (`kv`).
 * `plan (template|kv)` - Plan a job from a template specified locally (`template`) or using configuration specified in Consul (`kv`).
 * `deploy (template|kv)` - Deploy a job, either with template and deploy options specified locally (`template`) or using configuration specified in Consul (`kv`).
-* `drain` - Drain a client node and wait until done.
 * `gc` - Force cluster garbage collection.
 * `kv list` - List jobs stored in Consul.
 * `kv set` - Set a job-related key in Consul.
