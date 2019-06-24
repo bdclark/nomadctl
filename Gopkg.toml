@@ -9,7 +9,7 @@
 
 [[constraint]]
   name = "github.com/hashicorp/nomad"
-  version = "0.7.1"
+  version = "0.8.4"
 
 [[constraint]]
   name = "github.com/pkg/errors"
@@ -34,7 +34,7 @@
 # HACK: fix issue w/ nomad dependencies
 [[override]]
   name = "github.com/ugorji/go"
-  revision = "5efa3251c7f7d05e5d9704a69a984ec9f1386a40"
+  revision = "0053ebfd9d0ee06ccefbfe17072021e1d4acebee"
 
 [[constraint]]
   branch = "master"
